@@ -21,28 +21,32 @@ def get_data(input_path, smth):
 
 		annot_path = os.path.join(data_path, 'Annotations')
 		imgs_path = os.path.join(data_path, 'JPEGImages')
-		imgsets_path_trainval = os.path.join(data_path, 'ImageSets','Main','trainval.txt')
-		imgsets_path_test = os.path.join(data_path, 'ImageSets','Main','test.txt')
+# 		imgsets_path_trainval = os.path.join(data_path, 'ImageSets','Main','trainval.txt')
+# 		imgsets_path_test = os.path.join(data_path, 'ImageSets','Main','test.txt')
 
 		trainval_files = []
 		test_files = []
-		try:
-			with open(imgsets_path_trainval) as f:
-				for line in f:
-					trainval_files.append(line.strip() + '.jpg')
-		except Exception as e:
-			print(e)
+		
+# 		try:
+# 			with open(imgsets_path_trainval) as f:
+# 				for line in f:
+# 					trainval_files.append(line.strip() + '.jpg')
+# 		except Exception as e:
+# 			print(e)
 
-		try:
-			with open(imgsets_path_test) as f:
-				for line in f:
-					test_files.append(line.strip() + '.jpg')
-		except Exception as e:
-			if data_path[-7:] == 'VOC2012':
-				# this is expected, most pascal voc distibutions dont have the test.txt file
-				pass
-			else:
-				print(e)
+# 		try:
+# 			with open(imgsets_path_test) as f:
+# 				for line in f:
+# 					test_files.append(line.strip() + '.jpg')
+# 		except Exception as e:
+# 			if data_path[-7:] == 'VOC2012':
+# 				# this is expected, most pascal voc distibutions dont have the test.txt file
+# 				pass
+# 			else:
+# 				print(e)
+		
+		trainval_files = os.listdir('/content/dataset/trainval')
+		# test_files = os.listdir('/content/dataset/test')
 		
 		annots = [os.path.join(annot_path, s) for s in os.listdir(annot_path)]
 		idx = 0
