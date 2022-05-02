@@ -17,6 +17,10 @@ from keras_frcnn import losses as losses
 import keras_frcnn.roi_helpers as roi_helpers
 from keras.utils import generic_utils
 
+# data logger init
+import wandb
+wandb.init(project="FasterRCNN", entity="team_ergo",name='buoy_detection')
+
 sys.setrecursionlimit(40000)
 
 parser = OptionParser()
@@ -30,7 +34,7 @@ parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal
 parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=False)
 parser.add_option("--rot", "--rot_90", dest="rot_90", help="Augment with 90 degree rotations in training. (Default=false).",
 				  action="store_true", default=False)
-parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=2000)
+parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=100)
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
 				default="config.pickle")
@@ -153,7 +157,7 @@ model_rpn.compile(optimizer=optimizer, loss=[losses.rpn_loss_cls(num_anchors), l
 model_classifier.compile(optimizer=optimizer_classifier, loss=[losses.class_loss_cls, losses.class_loss_regr(len(classes_count)-1)], metrics={f'dense_class_{len(classes_count)}': 'accuracy'})
 model_all.compile(optimizer='sgd', loss='mae')
 
-epoch_length = 1000
+epoch_length = 300
 num_epochs = int(options.num_epochs)
 iter_num = 0
 
@@ -255,6 +259,9 @@ for epoch_num in range(num_epochs):
 				loss_class_cls = np.mean(losses[:, 2])
 				loss_class_regr = np.mean(losses[:, 3])
 				class_acc = np.mean(losses[:, 4])
+				
+				wandb.log({'Loss RPN classifier':loss_rpn_cls,'Loss RPN regression':loss_rpn_regr})
+				wandb.log({'Loss Detector classifier':loss_class_cls,'Loss Detector regression':loss_class_regr})
 
 				mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
 				rpn_accuracy_for_epoch = []
@@ -269,6 +276,8 @@ for epoch_num in range(num_epochs):
 					print(f'Elapsed time: {time.time() - start_time}')
 
 				curr_loss = loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr
+				wandb.log({'Total loss':curr_loss})
+				
 				iter_num = 0
 				start_time = time.time()
 
