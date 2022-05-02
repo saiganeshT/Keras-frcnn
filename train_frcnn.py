@@ -400,4 +400,9 @@ for epoch_num in range(num_epochs):
 # 						model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
 						break
 
+	
+				except Exception as e:
+					print(f'Exception: {e}')
+					continue
+
 print('Training complete, exiting.')
