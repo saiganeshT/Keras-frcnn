@@ -19,7 +19,7 @@ from keras.utils import generic_utils
 
 # data logger
 import wandb
-wandb.init(project="FasterRCNN", entity="team_ergo",name='debug')
+wandb.init(project="FasterRCNN", entity="team_ergo",name='w_validation')
 
 sys.setrecursionlimit(40000)
 
@@ -190,7 +190,7 @@ for epoch_num in range(num_epochs):
 	print(f'Epoch {epoch_num + 1}/{num_epochs}')
 
 	while True:
-		try:
+		# try:
 
 			if len(rpn_accuracy_rpn_monitor) == epoch_length and C.verbose:
 				mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
@@ -301,9 +301,9 @@ for epoch_num in range(num_epochs):
 				model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
 				break
 
-		except Exception as e:
-			print(f'Exception: {e}')
-			continue
+		# except Exception as e:
+		# 	print(f'Exception: {e}')
+		# 	continue
 			
   # validation steps
 	if iter_num==epoch_length:
@@ -312,9 +312,9 @@ for epoch_num in range(num_epochs):
 		print('Validation')
 
 		while True:
-			try:
+			# try:
 
-				if len(rpn_accuracy_rpn_monitor) == epoch_length and C.verbose:
+				if len(rpn_accuracy_rpn_monitor) == val_epoch_length and C.verbose:
 					mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
 					rpn_accuracy_rpn_monitor = []
 					print(f'\nAverage number of overlapping bounding boxes from RPN = {mean_overlapping_bboxes} for {epoch_length} previous iterations')
@@ -330,6 +330,11 @@ for epoch_num in range(num_epochs):
 				R = roi_helpers.rpn_to_roi(P_rpn[0], P_rpn[1], C, K.common.image_dim_ordering(), use_regr=True, overlap_thresh=0.7, max_boxes=300)
 				# note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
 				X2, Y1, Y2, IouS = roi_helpers.calc_iou(R, img_data, C, class_mapping)
+
+				if X2 is None:
+				  rpn_accuracy_rpn_monitor.append(0)
+				  rpn_accuracy_for_epoch.append(0)
+				  continue
 
 				neg_samples = np.where(Y1[0, :, -1] == 1)
 				pos_samples = np.where(Y1[0, :, -1] == 0)
@@ -413,14 +418,14 @@ for epoch_num in range(num_epochs):
 
 					if val_curr_loss < val_best_loss:
 						if C.verbose:
-							print(f'Total loss decreased from {best_loss} to {curr_loss}, saving weights')
+							print(f'Total loss decreased from {val_best_loss} to {val_curr_loss}, saving weights')
 						val_best_loss = val_curr_loss
 					model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
 					break
 
 	
-			except Exception as e:
-				print(f'Exception: {e}')
-				continue
+			# except Exception as e:
+			# 	print(f'Exception: {e}')
+			# 	continue
 
 print('Training complete, exiting.')
