@@ -294,12 +294,12 @@ for epoch_num in range(num_epochs):
 				# iter_num = 0
 				start_time = time.time()
 
-				if curr_loss < best_loss:
-					if C.verbose:
-						print(f'Total loss decreased from {best_loss} to {curr_loss}, saving weights')
-					best_loss = curr_loss
-				model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
-				break
+				# if curr_loss < best_loss:
+				# 	if C.verbose:
+				# 		print(f'Total loss decreased from {best_loss} to {curr_loss}, saving weights')
+				# 	best_loss = curr_loss
+				# model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
+				# break
 
 		# except Exception as e:
 		# 	print(f'Exception: {e}')
@@ -408,10 +408,10 @@ for epoch_num in range(num_epochs):
 					val_curr_loss = val_loss_rpn_cls + val_loss_rpn_regr + val_loss_class_cls + val_loss_class_regr
 
 					#datalog
-					wandb.log({'Loss RPN classifier':val_loss_rpn_cls,'Loss RPN regression':val_loss_rpn_regr})
-					wandb.log({'Loss Detector classifier':val_loss_class_cls,'Loss Detector regression':val_loss_class_regr})
-					wandb.log({'Classifier accuracy':val_class_acc})
-					wandb.log({'Total loss':val_curr_loss})
+					wandb.log({'Val Loss RPN classifier':val_loss_rpn_cls,'Val Loss RPN regression':val_loss_rpn_regr})
+					wandb.log({'Val Loss Detector classifier':val_loss_class_cls,'Val Loss Detector regression':val_loss_class_regr})
+					wandb.log({'Val Classifier accuracy':val_class_acc})
+					wandb.log({'Val Total loss':val_curr_loss})
 
 					iter_num = 0
 					start_time = time.time()
