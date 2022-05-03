@@ -85,8 +85,8 @@ else:
 	# set the path to weights based on backend and model
 	C.base_net_weights = nn.get_weight_path()
 
-train_imgs, classes_count, class_mapping = get_data(options.train_path, 'trainval')
-val_imgs, _, _ = get_data(options.train_path, 'test')
+imgs, classes_count, class_mapping = get_data(options.train_path, 'trainval')
+# val_imgs, _, _ = get_data(options.train_path, 'test')
 
 if 'bg' not in classes_count:
 	classes_count['bg'] = 0
@@ -106,9 +106,17 @@ with open(config_output_filename, 'wb') as config_f:
 	pickle.dump(C,config_f)
 	print(f'Config has been written to {config_output_filename}, and can be loaded when testing to ensure correct results')
 
-random.shuffle(train_imgs)
+random.shuffle(imgs)
 
-num_imgs = len(train_imgs)
+# extract the validation set as 30% of the training set
+num_imgs = len(imgs)
+num_val = int(num_imgs*0.3)
+rnd_ids = random.sample(range(0,num_imgs),num_val)
+
+train_imgs = []
+val_imgs = []
+for i, e in enumerate(imgs):
+    (train_imgs, val_imgs)[i in rnd_ids].append(e)
 
 #train_imgs = [s for s in all_imgs if s['imageset'] == 'trainval']
 #val_imgs = [s for s in all_imgs if s['imageset'] == 'test']
@@ -158,7 +166,7 @@ model_classifier.compile(optimizer=optimizer_classifier, loss=[losses.class_loss
 model_all.compile(optimizer='sgd', loss='mae')
 
 epoch_length = len(train_imgs)
-val_epoch_length = len(train_imgs)
+val_epoch_length = len(val_imgs)
 num_epochs = int(options.num_epochs)
 iter_num = 0
 
