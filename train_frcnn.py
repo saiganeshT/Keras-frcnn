@@ -124,7 +124,6 @@ for i, e in enumerate(imgs):
 print(f'Num train samples {len(train_imgs)}')
 print(f'Num val samples {len(val_imgs)}')
 
-
 data_gen_train = data_generators.get_anchor_gt(train_imgs, classes_count, C, nn.get_img_output_length, K.common.image_dim_ordering(), mode='train')
 data_gen_val = data_generators.get_anchor_gt(val_imgs, classes_count, C, nn.get_img_output_length,K.common.image_dim_ordering(), mode='val')
 
@@ -190,18 +189,134 @@ for epoch_num in range(num_epochs):
 	print(f'Epoch {epoch_num + 1}/{num_epochs}')
 
 	while True:
-		# try:
 
-			if len(rpn_accuracy_rpn_monitor) == epoch_length and C.verbose:
+		if len(rpn_accuracy_rpn_monitor) == epoch_length and C.verbose:
+			mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
+			rpn_accuracy_rpn_monitor = []
+			print(f'\nAverage number of overlapping bounding boxes from RPN = {mean_overlapping_bboxes} for {epoch_length} previous iterations')
+			if mean_overlapping_bboxes == 0:
+				print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
+
+		X, Y, img_data = next(data_gen_train)
+
+		loss_rpn = model_rpn.train_on_batch(X, Y)
+
+		P_rpn = model_rpn.predict_on_batch(X)
+
+		R = roi_helpers.rpn_to_roi(P_rpn[0], P_rpn[1], C, K.common.image_dim_ordering(), use_regr=True, overlap_thresh=0.7, max_boxes=300)
+		# note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
+		X2, Y1, Y2, IouS = roi_helpers.calc_iou(R, img_data, C, class_mapping)
+
+		if X2 is None:
+			rpn_accuracy_rpn_monitor.append(0)
+			rpn_accuracy_for_epoch.append(0)
+			continue
+
+		neg_samples = np.where(Y1[0, :, -1] == 1)
+		pos_samples = np.where(Y1[0, :, -1] == 0)
+
+		if len(neg_samples) > 0:
+			neg_samples = neg_samples[0]
+		else:
+			neg_samples = []
+
+		if len(pos_samples) > 0:
+			pos_samples = pos_samples[0]
+		else:
+			pos_samples = []
+			
+		rpn_accuracy_rpn_monitor.append(len(pos_samples))
+		rpn_accuracy_for_epoch.append((len(pos_samples)))
+
+		if C.num_rois > 1:
+			if len(pos_samples) < C.num_rois//2:
+				selected_pos_samples = pos_samples.tolist()
+			else:
+				selected_pos_samples = np.random.choice(pos_samples, C.num_rois//2, replace=False).tolist()
+			try:
+				selected_neg_samples = np.random.choice(neg_samples, C.num_rois - len(selected_pos_samples), replace=False).tolist()
+			except:
+				selected_neg_samples = np.random.choice(neg_samples, C.num_rois - len(selected_pos_samples), replace=True).tolist()
+
+			sel_samples = selected_pos_samples + selected_neg_samples
+		else:
+			# in the extreme case where num_rois = 1, we pick a random pos or neg sample
+			selected_pos_samples = pos_samples.tolist()
+			selected_neg_samples = neg_samples.tolist()
+			if np.random.randint(0, 2):
+				sel_samples = random.choice(neg_samples)
+			else:
+				sel_samples = random.choice(pos_samples)
+
+		loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
+
+		losses[iter_num, 0] = loss_rpn[1]
+		losses[iter_num, 1] = loss_rpn[2]
+
+		losses[iter_num, 2] = loss_class[1]
+		losses[iter_num, 3] = loss_class[2]
+		losses[iter_num, 4] = loss_class[3]
+
+		progbar.update(iter_num+1, [('rpn_cls', losses[iter_num, 0]), ('rpn_regr', losses[iter_num, 1]),
+								  ('detector_cls', losses[iter_num, 2]), ('detector_regr', losses[iter_num, 3])])
+
+		iter_num += 1
+			
+		if iter_num == epoch_length:
+			loss_rpn_cls = np.mean(losses[:, 0])
+			loss_rpn_regr = np.mean(losses[:, 1])
+			loss_class_cls = np.mean(losses[:, 2])
+			loss_class_regr = np.mean(losses[:, 3])
+			class_acc = np.mean(losses[:, 4])
+
+			mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
+			rpn_accuracy_for_epoch = []
+
+			if C.verbose:
+				print(f'Mean number of bounding boxes from RPN overlapping ground truth boxes: {mean_overlapping_bboxes}')
+				print(f'Classifier accuracy for bounding boxes from RPN: {class_acc}')
+				print(f'Loss RPN classifier: {loss_rpn_cls}')
+				print(f'Loss RPN regression: {loss_rpn_regr}')
+				print(f'Loss Detector classifier: {loss_class_cls}')
+				print(f'Loss Detector regression: {loss_class_regr}')
+				print(f'Elapsed time: {time.time() - start_time}')
+
+			curr_loss = loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr
+
+			#datalog
+			wandb.log({'Loss RPN classifier':loss_rpn_cls,'Loss RPN regression':loss_rpn_regr})
+			wandb.log({'Loss Detector classifier':loss_class_cls,'Loss Detector regression':loss_class_regr})
+			wandb.log({'Classifier accuracy':class_acc})
+			wandb.log({'Total loss':curr_loss})
+
+			# iter_num = 0
+			start_time = time.time()
+
+			# if curr_loss < best_loss:
+			# 	if C.verbose:
+			# 		print(f'Total loss decreased from {best_loss} to {curr_loss}, saving weights')
+			# 	best_loss = curr_loss
+			# model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
+			break
+			
+  # validation steps
+	if iter_num==epoch_length:
+		iter_num = 0
+		progbar = generic_utils.Progbar(val_epoch_length)
+		print('Validation')
+
+		while True:
+
+			if len(rpn_accuracy_rpn_monitor) == val_epoch_length and C.verbose:
 				mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
 				rpn_accuracy_rpn_monitor = []
 				print(f'\nAverage number of overlapping bounding boxes from RPN = {mean_overlapping_bboxes} for {epoch_length} previous iterations')
 				if mean_overlapping_bboxes == 0:
 					print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
 
-			X, Y, img_data = next(data_gen_train)
+			X, Y, img_data = next(data_gen_val)
 
-			loss_rpn = model_rpn.train_on_batch(X, Y)
+			val_loss_rpn = model_rpn.test_on_batch(X, Y)
 
 			P_rpn = model_rpn.predict_on_batch(X)
 
@@ -210,9 +325,9 @@ for epoch_num in range(num_epochs):
 			X2, Y1, Y2, IouS = roi_helpers.calc_iou(R, img_data, C, class_mapping)
 
 			if X2 is None:
-				rpn_accuracy_rpn_monitor.append(0)
-				rpn_accuracy_for_epoch.append(0)
-				continue
+			  rpn_accuracy_rpn_monitor.append(0)
+			  rpn_accuracy_for_epoch.append(0)
+			  continue
 
 			neg_samples = np.where(Y1[0, :, -1] == 1)
 			pos_samples = np.where(Y1[0, :, -1] == 0)
@@ -226,7 +341,7 @@ for epoch_num in range(num_epochs):
 				pos_samples = pos_samples[0]
 			else:
 				pos_samples = []
-			
+
 			rpn_accuracy_rpn_monitor.append(len(pos_samples))
 			rpn_accuracy_for_epoch.append((len(pos_samples)))
 
@@ -250,182 +365,55 @@ for epoch_num in range(num_epochs):
 				else:
 					sel_samples = random.choice(pos_samples)
 
-			loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
+			val_loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
 
-			losses[iter_num, 0] = loss_rpn[1]
-			losses[iter_num, 1] = loss_rpn[2]
+			val_losses[iter_num, 0] = loss_rpn[1]
+			val_losses[iter_num, 1] = loss_rpn[2]
 
-			losses[iter_num, 2] = loss_class[1]
-			losses[iter_num, 3] = loss_class[2]
-			losses[iter_num, 4] = loss_class[3]
+			val_losses[iter_num, 2] = loss_class[1]
+			val_losses[iter_num, 3] = loss_class[2]
+			val_losses[iter_num, 4] = loss_class[3]
 
-			progbar.update(iter_num+1, [('rpn_cls', losses[iter_num, 0]), ('rpn_regr', losses[iter_num, 1]),
-									  ('detector_cls', losses[iter_num, 2]), ('detector_regr', losses[iter_num, 3])])
+			progbar.update(iter_num+1, [('rpn_cls', val_losses[iter_num, 0]), ('rpn_regr', val_losses[iter_num, 1]),
+									  ('detector_cls', val_losses[iter_num, 2]), ('detector_regr', val_losses[iter_num, 3])])
 
 			iter_num += 1
-			
-			if iter_num == epoch_length:
-				loss_rpn_cls = np.mean(losses[:, 0])
-				loss_rpn_regr = np.mean(losses[:, 1])
-				loss_class_cls = np.mean(losses[:, 2])
-				loss_class_regr = np.mean(losses[:, 3])
-				class_acc = np.mean(losses[:, 4])
+
+			if iter_num == val_epoch_length:
+				val_loss_rpn_cls = np.mean(losses[:, 0])
+				val_loss_rpn_regr = np.mean(losses[:, 1])
+				val_loss_class_cls = np.mean(losses[:, 2])
+				val_loss_class_regr = np.mean(losses[:, 3])
+				val_class_acc = np.mean(losses[:, 4])
 
 				mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
 				rpn_accuracy_for_epoch = []
 
 				if C.verbose:
 					print(f'Mean number of bounding boxes from RPN overlapping ground truth boxes: {mean_overlapping_bboxes}')
-					print(f'Classifier accuracy for bounding boxes from RPN: {class_acc}')
-					print(f'Loss RPN classifier: {loss_rpn_cls}')
-					print(f'Loss RPN regression: {loss_rpn_regr}')
-					print(f'Loss Detector classifier: {loss_class_cls}')
-					print(f'Loss Detector regression: {loss_class_regr}')
+					print(f'Classifier accuracy for bounding boxes from RPN: {val_class_acc}')
+					print(f'Loss RPN classifier: {val_loss_rpn_cls}')
+					print(f'Loss RPN regression: {val_loss_rpn_regr}')
+					print(f'Loss Detector classifier: {val_loss_class_cls}')
+					print(f'Loss Detector regression: {val_loss_class_regr}')
 					print(f'Elapsed time: {time.time() - start_time}')
 
-				curr_loss = loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr
+				val_curr_loss = val_loss_rpn_cls + val_loss_rpn_regr + val_loss_class_cls + val_loss_class_regr
 
 				#datalog
-				wandb.log({'Loss RPN classifier':loss_rpn_cls,'Loss RPN regression':loss_rpn_regr})
-				wandb.log({'Loss Detector classifier':loss_class_cls,'Loss Detector regression':loss_class_regr})
-				wandb.log({'Classifier accuracy':class_acc})
-				wandb.log({'Total loss':curr_loss})
+				wandb.log({'Val Loss RPN classifier':val_loss_rpn_cls,'Val Loss RPN regression':val_loss_rpn_regr})
+				wandb.log({'Val Loss Detector classifier':val_loss_class_cls,'Val Loss Detector regression':val_loss_class_regr})
+				wandb.log({'Val Classifier accuracy':val_class_acc})
+				wandb.log({'Val Total loss':val_curr_loss})
 
-				# iter_num = 0
+				iter_num = 0
 				start_time = time.time()
 
-				# if curr_loss < best_loss:
-				# 	if C.verbose:
-				# 		print(f'Total loss decreased from {best_loss} to {curr_loss}, saving weights')
-				# 	best_loss = curr_loss
-				# model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
-				# break
-
-		# except Exception as e:
-		# 	print(f'Exception: {e}')
-		# 	continue
-			
-  # validation steps
-	if iter_num==epoch_length:
-		iter_num = 0
-		progbar = generic_utils.Progbar(val_epoch_length)
-		print('Validation')
-
-		while True:
-			# try:
-
-				if len(rpn_accuracy_rpn_monitor) == val_epoch_length and C.verbose:
-					mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
-					rpn_accuracy_rpn_monitor = []
-					print(f'\nAverage number of overlapping bounding boxes from RPN = {mean_overlapping_bboxes} for {epoch_length} previous iterations')
-					if mean_overlapping_bboxes == 0:
-						print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
-
-				X, Y, img_data = next(data_gen_train)
-
-				val_loss_rpn = model_rpn.test_on_batch(X, Y)
-
-				P_rpn = model_rpn.predict_on_batch(X)
-
-				R = roi_helpers.rpn_to_roi(P_rpn[0], P_rpn[1], C, K.common.image_dim_ordering(), use_regr=True, overlap_thresh=0.7, max_boxes=300)
-				# note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
-				X2, Y1, Y2, IouS = roi_helpers.calc_iou(R, img_data, C, class_mapping)
-
-				if X2 is None:
-				  rpn_accuracy_rpn_monitor.append(0)
-				  rpn_accuracy_for_epoch.append(0)
-				  continue
-
-				neg_samples = np.where(Y1[0, :, -1] == 1)
-				pos_samples = np.where(Y1[0, :, -1] == 0)
-
-				if len(neg_samples) > 0:
-					neg_samples = neg_samples[0]
-				else:
-					neg_samples = []
-
-				if len(pos_samples) > 0:
-					pos_samples = pos_samples[0]
-				else:
-					pos_samples = []
-
-				rpn_accuracy_rpn_monitor.append(len(pos_samples))
-				rpn_accuracy_for_epoch.append((len(pos_samples)))
-
-				if C.num_rois > 1:
-					if len(pos_samples) < C.num_rois//2:
-						selected_pos_samples = pos_samples.tolist()
-					else:
-						selected_pos_samples = np.random.choice(pos_samples, C.num_rois//2, replace=False).tolist()
-					try:
-						selected_neg_samples = np.random.choice(neg_samples, C.num_rois - len(selected_pos_samples), replace=False).tolist()
-					except:
-						selected_neg_samples = np.random.choice(neg_samples, C.num_rois - len(selected_pos_samples), replace=True).tolist()
-
-					sel_samples = selected_pos_samples + selected_neg_samples
-				else:
-					# in the extreme case where num_rois = 1, we pick a random pos or neg sample
-					selected_pos_samples = pos_samples.tolist()
-					selected_neg_samples = neg_samples.tolist()
-					if np.random.randint(0, 2):
-						sel_samples = random.choice(neg_samples)
-					else:
-						sel_samples = random.choice(pos_samples)
-
-				val_loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
-
-				val_losses[iter_num, 0] = loss_rpn[1]
-				val_losses[iter_num, 1] = loss_rpn[2]
-
-				val_losses[iter_num, 2] = loss_class[1]
-				val_losses[iter_num, 3] = loss_class[2]
-				val_losses[iter_num, 4] = loss_class[3]
-
-				progbar.update(iter_num+1, [('rpn_cls', val_losses[iter_num, 0]), ('rpn_regr', val_losses[iter_num, 1]),
-										  ('detector_cls', val_losses[iter_num, 2]), ('detector_regr', val_losses[iter_num, 3])])
-
-				iter_num += 1
-
-				if iter_num == val_epoch_length:
-					val_loss_rpn_cls = np.mean(losses[:, 0])
-					val_loss_rpn_regr = np.mean(losses[:, 1])
-					val_loss_class_cls = np.mean(losses[:, 2])
-					val_loss_class_regr = np.mean(losses[:, 3])
-					val_class_acc = np.mean(losses[:, 4])
-
-					mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
-					rpn_accuracy_for_epoch = []
-
+				if val_curr_loss < val_best_loss:
 					if C.verbose:
-						print(f'Mean number of bounding boxes from RPN overlapping ground truth boxes: {mean_overlapping_bboxes}')
-						print(f'Classifier accuracy for bounding boxes from RPN: {val_class_acc}')
-						print(f'Loss RPN classifier: {val_loss_rpn_cls}')
-						print(f'Loss RPN regression: {val_loss_rpn_regr}')
-						print(f'Loss Detector classifier: {val_loss_class_cls}')
-						print(f'Loss Detector regression: {val_loss_class_regr}')
-						print(f'Elapsed time: {time.time() - start_time}')
-
-					val_curr_loss = val_loss_rpn_cls + val_loss_rpn_regr + val_loss_class_cls + val_loss_class_regr
-
-					#datalog
-					wandb.log({'Val Loss RPN classifier':val_loss_rpn_cls,'Val Loss RPN regression':val_loss_rpn_regr})
-					wandb.log({'Val Loss Detector classifier':val_loss_class_cls,'Val Loss Detector regression':val_loss_class_regr})
-					wandb.log({'Val Classifier accuracy':val_class_acc})
-					wandb.log({'Val Total loss':val_curr_loss})
-
-					iter_num = 0
-					start_time = time.time()
-
-					if val_curr_loss < val_best_loss:
-						if C.verbose:
-							print(f'Total loss decreased from {val_best_loss} to {val_curr_loss}, saving weights')
-						val_best_loss = val_curr_loss
-					model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
-					break
-
-	
-			# except Exception as e:
-			# 	print(f'Exception: {e}')
-			# 	continue
+						print(f'Total loss decreased from {val_best_loss} to {val_curr_loss}, saving weights')
+					val_best_loss = val_curr_loss
+				model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
+				break
 
 print('Training complete, exiting.')
