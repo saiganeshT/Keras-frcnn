@@ -291,7 +291,8 @@ for epoch_num in range(num_epochs):
 									'Classifier acc':class_acc,
 									'Total loss':curr_loss,
 									'Epoch':epoch_num},
-									commit=False)
+									commit=False,
+									step=epoch_num)
 
 			# iter_num = 0
 			start_time = time.time()
@@ -412,7 +413,8 @@ for epoch_num in range(num_epochs):
 										'Val Loss Detector regr':val_loss_class_regr,
 										'Val Classifier acc':val_class_acc,
 										'Val Total loss':val_curr_loss},
-										commit=True)
+										commit=True,
+										step=epoch_num)
 
 				iter_num = 0
 				start_time = time.time()
