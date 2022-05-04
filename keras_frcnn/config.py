@@ -5,7 +5,7 @@ class Config:
 
 	def __init__(self):
 
-		self.verbose = True
+		self.verbose = False
 
 		self.network = 'resnet50'
 
