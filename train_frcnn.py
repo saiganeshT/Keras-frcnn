@@ -288,6 +288,7 @@ for epoch_num in range(num_epochs):
 			wandb.log({'Loss Detector classifier':loss_class_cls,'Loss Detector regression':loss_class_regr})
 			wandb.log({'Classifier accuracy':class_acc})
 			wandb.log({'Total loss':curr_loss})
+			wandb.log({'Epoch':epoch_num})
 
 			# iter_num = 0
 			start_time = time.time()
@@ -297,7 +298,8 @@ for epoch_num in range(num_epochs):
 			# 		print(f'Total loss decreased from {best_loss} to {curr_loss}, saving weights')
 			# 	best_loss = curr_loss
 			# model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
-			break
+			
+      break
 			
   # validation steps
 	if iter_num==epoch_length:
@@ -367,12 +369,12 @@ for epoch_num in range(num_epochs):
 
 			val_loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
 
-			val_losses[iter_num, 0] = loss_rpn[1]
-			val_losses[iter_num, 1] = loss_rpn[2]
+			val_losses[iter_num, 0] = val_loss_rpn[1]
+			val_losses[iter_num, 1] = val_loss_rpn[2]
 
-			val_losses[iter_num, 2] = loss_class[1]
-			val_losses[iter_num, 3] = loss_class[2]
-			val_losses[iter_num, 4] = loss_class[3]
+			val_losses[iter_num, 2] = val_loss_class[1]
+			val_losses[iter_num, 3] = val_loss_class[2]
+			val_losses[iter_num, 4] = val_loss_class[3]
 
 			progbar.update(iter_num+1, [('rpn_cls', val_losses[iter_num, 0]), ('rpn_regr', val_losses[iter_num, 1]),
 									  ('detector_cls', val_losses[iter_num, 2]), ('detector_regr', val_losses[iter_num, 3])])
@@ -380,11 +382,11 @@ for epoch_num in range(num_epochs):
 			iter_num += 1
 
 			if iter_num == val_epoch_length:
-				val_loss_rpn_cls = np.mean(losses[:, 0])
-				val_loss_rpn_regr = np.mean(losses[:, 1])
-				val_loss_class_cls = np.mean(losses[:, 2])
-				val_loss_class_regr = np.mean(losses[:, 3])
-				val_class_acc = np.mean(losses[:, 4])
+				val_loss_rpn_cls = np.mean(val_losses[:, 0])
+				val_loss_rpn_regr = np.mean(val_losses[:, 1])
+				val_loss_class_cls = np.mean(val_losses[:, 2])
+				val_loss_class_regr = np.mean(val_losses[:, 3])
+				val_class_acc = np.mean(val_losses[:, 4])
 
 				mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
 				rpn_accuracy_for_epoch = []
@@ -401,17 +403,17 @@ for epoch_num in range(num_epochs):
 				val_curr_loss = val_loss_rpn_cls + val_loss_rpn_regr + val_loss_class_cls + val_loss_class_regr
 
 				#datalog
-				wandb.log({'Val Loss RPN classifier':val_loss_rpn_cls,'Val Loss RPN regression':val_loss_rpn_regr})
-				wandb.log({'Val Loss Detector classifier':val_loss_class_cls,'Val Loss Detector regression':val_loss_class_regr})
-				wandb.log({'Val Classifier accuracy':val_class_acc})
-				wandb.log({'Val Total loss':val_curr_loss})
+				wandb.log({'Validation Loss RPN classifier':val_loss_rpn_cls,'Validation Loss RPN regression':val_loss_rpn_regr})
+				wandb.log({'Validation Loss Detector classifier':val_loss_class_cls,'Validation Loss Detector regression':val_loss_class_regr})
+				wandb.log({'Validation Classifier accuracy':val_class_acc})
+				wandb.log({'Validation Total loss':val_curr_loss})
 
 				iter_num = 0
 				start_time = time.time()
 
 				if val_curr_loss < val_best_loss:
 					if C.verbose:
-						print(f'Total loss decreased from {val_best_loss} to {val_curr_loss}, saving weights')
+						print(f'Validation total loss decreased from {val_best_loss} to {val_curr_loss}, saving weights')
 					val_best_loss = val_curr_loss
 				model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
 				break
