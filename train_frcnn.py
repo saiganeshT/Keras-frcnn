@@ -284,11 +284,14 @@ for epoch_num in range(num_epochs):
 			curr_loss = loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr
 
 			#datalog
-			wandb.log({'Loss RPN classifier':loss_rpn_cls,'Loss RPN regression':loss_rpn_regr})
-			wandb.log({'Loss Detector classifier':loss_class_cls,'Loss Detector regression':loss_class_regr})
-			wandb.log({'Classifier accuracy':class_acc})
-			wandb.log({'Total loss':curr_loss})
-			wandb.log({'Epoch':epoch_num})
+			wandb.log({'Loss RPN class':loss_rpn_cls,
+									'Loss RPN regr':loss_rpn_regr,
+									'Loss Detector class':loss_class_cls,
+									'Loss Detector regr':loss_class_regr,
+									'Classifier acc':class_acc,
+									'Total loss':curr_loss,
+									'Epoch':epoch_num},
+									commit=False)
 
 			# iter_num = 0
 			start_time = time.time()
@@ -299,7 +302,7 @@ for epoch_num in range(num_epochs):
 			# 	best_loss = curr_loss
 			# model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
 			
-      break
+			break
 			
   # validation steps
 	if iter_num==epoch_length:
@@ -403,10 +406,13 @@ for epoch_num in range(num_epochs):
 				val_curr_loss = val_loss_rpn_cls + val_loss_rpn_regr + val_loss_class_cls + val_loss_class_regr
 
 				#datalog
-				wandb.log({'Validation Loss RPN classifier':val_loss_rpn_cls,'Validation Loss RPN regression':val_loss_rpn_regr})
-				wandb.log({'Validation Loss Detector classifier':val_loss_class_cls,'Validation Loss Detector regression':val_loss_class_regr})
-				wandb.log({'Validation Classifier accuracy':val_class_acc})
-				wandb.log({'Validation Total loss':val_curr_loss})
+				wandb.log({'Val Loss RPN class':val_loss_rpn_cls,
+										'Val Loss RPN regr':val_loss_rpn_regr,
+										'Val Loss Detector class':val_loss_class_cls,
+										'Val Loss Detector regr':val_loss_class_regr,
+										'Val Classifier acc':val_class_acc,
+										'Val Total loss':val_curr_loss},
+										commit=True)
 
 				iter_num = 0
 				start_time = time.time()
