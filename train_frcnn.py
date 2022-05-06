@@ -424,6 +424,7 @@ for epoch_num in range(num_epochs):
 						print(f'Validation total loss decreased from {val_best_loss} to {val_curr_loss}, saving weights')
 					val_best_loss = val_curr_loss
 				model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
+				wandb.save(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
 				break
 
 print('Training complete, exiting.')
