@@ -50,6 +50,7 @@ def get_data(input_path, smth):
 		# test_files = os.listdir('/content/dataset/test')
 		
 		annots = [os.path.join(annot_path, s) for s in os.listdir(annot_path)]
+		annotation_data = {}
 		idx = 0
 		for annot in annots:
 			try:
