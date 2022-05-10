@@ -19,7 +19,7 @@ from keras.utils import generic_utils
 
 # data logger
 import wandb
-wandb.init(project="FasterRCNN", entity="team_ergo",name='w_validation')
+wandb.init(project="FasterRCNN", entity="team_ergo",name='buoy_detection_rot400')
 
 sys.setrecursionlimit(40000)
 
@@ -33,7 +33,7 @@ parser.add_option("--network", dest="network", help="Base network to use. Suppor
 parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=False)
 parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=False)
 parser.add_option("--rot", "--rot_90", dest="rot_90", help="Augment with 90 degree rotations in training. (Default=false).",
-				  action="store_true", default=False)
+				  action="store_true", default=True)
 parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=100)
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
@@ -106,6 +106,7 @@ with open(config_output_filename, 'wb') as config_f:
 	pickle.dump(C,config_f)
 	print(f'Config has been written to {config_output_filename}, and can be loaded when testing to ensure correct results')
 
+wandb.save('config.pickle')
 random.shuffle(imgs)
 
 # extract the validation set as 30% of the training set
@@ -371,7 +372,7 @@ for epoch_num in range(num_epochs):
 				else:
 					sel_samples = random.choice(pos_samples)
 
-			val_loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
+			val_loss_class = model_classifier.test_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
 
 			val_losses[iter_num, 0] = val_loss_rpn[1]
 			val_losses[iter_num, 1] = val_loss_rpn[2]
