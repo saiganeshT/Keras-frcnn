@@ -10,9 +10,9 @@ class Config:
 		self.network = 'resnet50'
 
 		# setting for data augmentation
-		self.use_horizontal_flips = False
-		self.use_vertical_flips = False
-		self.rot_90 = False
+		self.use_horizontal_flips = True
+		self.use_vertical_flips = True
+		self.rot_90 = True
 
 		# anchor box scales
 		self.anchor_box_scales = [128, 256, 512]
@@ -24,7 +24,7 @@ class Config:
 		self.im_size = 416
 
 		# image channel-wise mean to subtract
-		self.img_channel_mean = [103.939, 116.779, 123.68]
+		self.img_channel_mean = [0,0,0]
 		self.img_scaling_factor = 1.0
 
 		# number of ROIs at once
@@ -55,4 +55,4 @@ class Config:
 		# https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_th_dim_ordering_th_kernels_notop.h5
 		# https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5
 
-		self.model_path = 'model_frcnn.vgg.hdf5'
+		self.model_path = 'model_frcnn.hdf5'
