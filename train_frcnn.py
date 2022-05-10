@@ -73,6 +73,9 @@ if options.network == 'vgg':
 elif options.network == 'resnet50':
 	from keras_frcnn import resnet as nn
 	C.network = 'resnet50'
+elif options.network == 'inception_resnet':
+	from keras_frcnn import inception_resnet_v2 as nn
+	C.network = 'inception_resnet'
 else:
 	print('Not a valid model')
 	raise ValueError
