@@ -19,7 +19,7 @@ from keras.utils import generic_utils
 
 # data logger
 import wandb
-wandb.init(project="FasterRCNN", entity="team_ergo",name='buoy_detection_rot400')
+wandb.init(project="FasterRCNN", entity="team_ergo",name='buoy_detection_rot400_fixed')
 
 sys.setrecursionlimit(40000)
 
@@ -30,8 +30,8 @@ parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of s
 				default="pascal_voc")
 parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=32)
 parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='resnet50')
-parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=False)
-parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=False)
+parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=True)
+parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--rot", "--rot_90", dest="rot_90", help="Augment with 90 degree rotations in training. (Default=false).",
 				  action="store_true", default=True)
 parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=100)
@@ -314,13 +314,6 @@ for epoch_num in range(num_epochs):
 
 		while True:
 
-			if len(rpn_accuracy_rpn_monitor) == val_epoch_length and C.verbose:
-				mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
-				rpn_accuracy_rpn_monitor = []
-				print(f'\nAverage number of overlapping bounding boxes from RPN = {mean_overlapping_bboxes} for {epoch_length} previous iterations')
-				if mean_overlapping_bboxes == 0:
-					print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
-
 			X, Y, img_data = next(data_gen_val)
 
 			val_loss_rpn = model_rpn.test_on_batch(X, Y)
@@ -330,11 +323,6 @@ for epoch_num in range(num_epochs):
 			R = roi_helpers.rpn_to_roi(P_rpn[0], P_rpn[1], C, K.common.image_dim_ordering(), use_regr=True, overlap_thresh=0.7, max_boxes=300)
 			# note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
 			X2, Y1, Y2, IouS = roi_helpers.calc_iou(R, img_data, C, class_mapping)
-
-			if X2 is None:
-			  rpn_accuracy_rpn_monitor.append(0)
-			  rpn_accuracy_for_epoch.append(0)
-			  continue
 
 			neg_samples = np.where(Y1[0, :, -1] == 1)
 			pos_samples = np.where(Y1[0, :, -1] == 0)
@@ -348,9 +336,6 @@ for epoch_num in range(num_epochs):
 				pos_samples = pos_samples[0]
 			else:
 				pos_samples = []
-
-			rpn_accuracy_rpn_monitor.append(len(pos_samples))
-			rpn_accuracy_for_epoch.append((len(pos_samples)))
 
 			if C.num_rois > 1:
 				if len(pos_samples) < C.num_rois//2:
@@ -393,11 +378,7 @@ for epoch_num in range(num_epochs):
 				val_loss_class_regr = np.mean(val_losses[:, 3])
 				val_class_acc = np.mean(val_losses[:, 4])
 
-				mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
-				rpn_accuracy_for_epoch = []
-
 				if C.verbose:
-					print(f'Mean number of bounding boxes from RPN overlapping ground truth boxes: {mean_overlapping_bboxes}')
 					print(f'Classifier accuracy for bounding boxes from RPN: {val_class_acc}')
 					print(f'Loss RPN classifier: {val_loss_rpn_cls}')
 					print(f'Loss RPN regression: {val_loss_rpn_regr}')
