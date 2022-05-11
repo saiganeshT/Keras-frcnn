@@ -14,7 +14,7 @@ from keras_frcnn.FixedBatchNormalization import FixedBatchNormalization
 
 
 def get_weight_path():
-    return os.path.join('keras_frcnn', 'weights','inception_resnet_v2.h5')
+    return 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5'
 
 
 def get_img_output_length(width, height):
@@ -281,7 +281,7 @@ def inception_resnet_block_td(x, scale, block_type, block_idx, activation='relu'
 def nn_base(input_tensor=None, trainable=False):
 
     # Determine proper input shape
-    if K.image_dim_ordering() == 'th':
+    if K.common.image_dim_ordering() == 'th':
         input_shape = (3, None, None)
     else:
         input_shape = (None, None, 3)
@@ -294,7 +294,7 @@ def nn_base(input_tensor=None, trainable=False):
         else:
             img_input = input_tensor
 
-    if K.image_dim_ordering() == 'tf':
+    if K.common.image_dim_ordering() == 'tf':
         bn_axis = 3
     else:
         bn_axis = 1
@@ -386,7 +386,7 @@ def classifier_layers(x, input_shape, trainable=False):
     return x
 
 
-def rpn(base_layers, num_anchors):
+def rpn(base_layers, num_anchors, trainable=True):
 
     x = Conv2D(512, (3, 3), padding='same', activation='relu', kernel_initializer='normal', name='rpn_conv1')(base_layers)
 
@@ -396,7 +396,7 @@ def rpn(base_layers, num_anchors):
     return [x_class, x_regr, base_layers]
 
 
-def classifier(base_layers, input_rois, num_rois, nb_classes=21, trainable=False):
+def classifier(base_layers, input_rois, num_rois, nb_classes=21, trainable=True):
 
     # compile times on theano tend to be very high, so we use smaller ROI pooling regions to workaround
 
