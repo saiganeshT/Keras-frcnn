@@ -85,7 +85,7 @@ def nn_base(input_tensor=None, trainable=False):
 
     return x
 
-def rpn(base_layers, num_anchors):
+def rpn(base_layers, num_anchors, trainable=True):
 
     x = Conv2D(512, (3, 3), padding='same', activation='relu', kernel_initializer='normal', name='rpn_conv1')(base_layers)
 
@@ -95,7 +95,7 @@ def rpn(base_layers, num_anchors):
     return [x_class, x_regr, base_layers]
 
 
-def classifier(base_layers, input_rois, num_rois, nb_classes = 21, trainable=False):
+def classifier(base_layers, input_rois, num_rois, nb_classes = 21, trainable=True):
 
     # compile times on theano tend to be very high, so we use smaller ROI pooling regions to workaround
 
