@@ -236,7 +236,7 @@ def classifier(base_layers, input_rois, num_rois, nb_classes = 21, trainable=Tru
         pooling_regions = 7
         input_shape = (num_rois,1024,7,7)
 
-    out_roi_pool = RoiPoolingConv(pooling_regions, num_rois, trainable=trainable)([base_layers, input_rois])
+    out_roi_pool = RoiPoolingConv(pooling_regions, num_rois)([base_layers, input_rois])
     out = classifier_layers(out_roi_pool, input_shape=input_shape, trainable=True)
 
     out = TimeDistributed(Flatten())(out)
