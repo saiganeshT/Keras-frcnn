@@ -106,13 +106,13 @@ def classifier(base_layers, input_rois, num_rois, nb_classes = 21, trainable=Tru
         pooling_regions = 7
         input_shape = (num_rois,512,7,7)
 
-    out_roi_pool = RoiPoolingConv(pooling_regions, num_rois,trainable=trainable)([base_layers, input_rois])
+    out_roi_pool = RoiPoolingConv(pooling_regions, num_rois)([base_layers, input_rois])
 
-    out = TimeDistributed(Flatten(name='flatten'),trainable=trainable)(out_roi_pool)
+    out = TimeDistributed(Flatten(name='flatten'))(out_roi_pool)
     out = TimeDistributed(Dense(4096, activation='relu', name='fc1'),trainable=trainable)(out)
-    out = TimeDistributed(Dropout(0.5),trainable=trainable)(out)
+    out = TimeDistributed(Dropout(0.5))(out)
     out = TimeDistributed(Dense(4096, activation='relu', name='fc2'),trainable=trainable)(out)
-    out = TimeDistributed(Dropout(0.5),trainable=trainable)(out)
+    out = TimeDistributed(Dropout(0.5))(out)
 
     out_class = TimeDistributed(Dense(nb_classes, activation='softmax', kernel_initializer='zero'), name='dense_class_{}'.format(nb_classes),trainable=trainable)(out)
     # note: no regression target for bg class
