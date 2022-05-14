@@ -41,7 +41,8 @@ def conv2d_bn(x,
               padding='same',
               activation='relu',
               use_bias=False,
-              name=None):
+              name=None,
+              trainable=True):
     """Utility function to apply conv + BN.
     # Arguments
         x: input tensor.
@@ -61,7 +62,8 @@ def conv2d_bn(x,
                strides=strides,
                padding=padding,
                use_bias=use_bias,
-               name=name)(x)
+               name=name,
+               trainable=trainable)(x)
     if not use_bias:
         bn_axis = 1 if K.image_data_format() == 'channels_first' else 3
         bn_name = None if name is None else name + '_bn'
@@ -81,7 +83,8 @@ def conv2d_bn_td(x,
                  padding='same',
                  activation='relu',
                  use_bias=False,
-                 name=None):
+                 name=None,
+                 trainable=True):
     """Utility function to apply conv + BN.
     # Arguments
         x: input tensor.
@@ -101,7 +104,8 @@ def conv2d_bn_td(x,
                                strides=strides,
                                padding=padding,
                                use_bias=use_bias),
-                        name=name)(x)
+                               name=name,
+                               trainable=trainable)(x)
     if not use_bias:
         bn_axis = 1 if K.image_data_format() == 'channels_first' else 3
         bn_name = None if name is None else name + '_bn'
@@ -114,7 +118,7 @@ def conv2d_bn_td(x,
     return x
 
 
-def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
+def inception_resnet_block(x, scale, block_type, block_idx, activation='relu',trainable=True):
     """Adds a Inception-ResNet block.
     This function builds 3 types of Inception-ResNet blocks mentioned
     in the paper, controlled by the `block_type` argument (which is the
@@ -153,24 +157,24 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
     block_name = block_type + '_' + str(block_idx)
 
     if block_type == 'block35':
-        branch_0 = conv2d_bn(x, 32, 1, name=block_name + '_conv1')
-        branch_1 = conv2d_bn(x, 32, 1, name=block_name + '_conv2')
-        branch_1 = conv2d_bn(branch_1, 32, 3, name=block_name + '_conv3')
-        branch_2 = conv2d_bn(x, 32, 1, name=block_name + '_conv4')
-        branch_2 = conv2d_bn(branch_2, 48, 3, name=block_name + '_conv5')
-        branch_2 = conv2d_bn(branch_2, 64, 3, name=block_name + '_conv6')
+        branch_0 = conv2d_bn(x, 32, 1, name=block_name + '_conv1', trainable=trainable)
+        branch_1 = conv2d_bn(x, 32, 1, name=block_name + '_conv2', trainable=trainable)
+        branch_1 = conv2d_bn(branch_1, 32, 3, name=block_name + '_conv3', trainable=trainable)
+        branch_2 = conv2d_bn(x, 32, 1, name=block_name + '_conv4', trainable=trainable)
+        branch_2 = conv2d_bn(branch_2, 48, 3, name=block_name + '_conv5', trainable=trainable)
+        branch_2 = conv2d_bn(branch_2, 64, 3, name=block_name + '_conv6', trainable=trainable)
         branches = [branch_0, branch_1, branch_2]
     elif block_type == 'block17':
-        branch_0 = conv2d_bn(x, 192, 1, name=block_name + '_conv1')
-        branch_1 = conv2d_bn(x, 128, 1, name=block_name + '_conv2')
-        branch_1 = conv2d_bn(branch_1, 160, [1, 7], name=block_name + '_conv3')
-        branch_1 = conv2d_bn(branch_1, 192, [7, 1], name=block_name + '_conv4')
+        branch_0 = conv2d_bn(x, 192, 1, name=block_name + '_conv1', trainable=trainable)
+        branch_1 = conv2d_bn(x, 128, 1, name=block_name + '_conv2', trainable=trainable)
+        branch_1 = conv2d_bn(branch_1, 160, [1, 7], name=block_name + '_conv3', trainable=trainable)
+        branch_1 = conv2d_bn(branch_1, 192, [7, 1], name=block_name + '_conv4', trainable=trainable)
         branches = [branch_0, branch_1]
     elif block_type == 'block8':
-        branch_0 = conv2d_bn(x, 192, 1, name=block_name + '_conv1')
-        branch_1 = conv2d_bn(x, 192, 1, name=block_name + '_conv2')
-        branch_1 = conv2d_bn(branch_1, 224, [1, 3], name=block_name + '_conv3')
-        branch_1 = conv2d_bn(branch_1, 256, [3, 1], name=block_name + '_conv4')
+        branch_0 = conv2d_bn(x, 192, 1, name=block_name + '_conv1', trainable=trainable)
+        branch_1 = conv2d_bn(x, 192, 1, name=block_name + '_conv2', trainable=trainable)
+        branch_1 = conv2d_bn(branch_1, 224, [1, 3], name=block_name + '_conv3', trainable=trainable)
+        branch_1 = conv2d_bn(branch_1, 256, [3, 1], name=block_name + '_conv4', trainable=trainable)
         branches = [branch_0, branch_1]
     else:
         raise ValueError('Unknown Inception-ResNet block type. '
@@ -185,7 +189,8 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
                    1,
                    activation=None,
                    use_bias=True,
-                   name=block_name + '_conv')
+                   name=block_name + '_conv',
+                   trainable=trainable)
 
     x = Lambda(lambda inputs, scale: inputs[0] + inputs[1] * scale,
                  output_shape=K.int_shape(x)[1:],
@@ -196,7 +201,7 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
     return x
 
 
-def inception_resnet_block_td(x, scale, block_type, block_idx, activation='relu'):
+def inception_resnet_block_td(x, scale, block_type, block_idx, activation='relu', trainable=True):
     """Adds a Inception-ResNet block.
     This function builds 3 types of Inception-ResNet blocks mentioned
     in the paper, controlled by the `block_type` argument (which is the
@@ -235,24 +240,24 @@ def inception_resnet_block_td(x, scale, block_type, block_idx, activation='relu'
     block_name = block_type + '_' + str(block_idx)
 
     if block_type == 'block35':
-        branch_0 = conv2d_bn_td(x, 32, 1, name=block_name + '_conv1')
-        branch_1 = conv2d_bn_td(x, 32, 1, name=block_name + '_conv2')
-        branch_1 = conv2d_bn_td(branch_1, 32, 3, name=block_name + '_conv3')
-        branch_2 = conv2d_bn_td(x, 32, 1, name=block_name + '_conv4')
-        branch_2 = conv2d_bn_td(branch_2, 48, 3, name=block_name + '_conv5')
-        branch_2 = conv2d_bn_td(branch_2, 64, 3, name=block_name + '_conv6')
+        branch_0 = conv2d_bn_td(x, 32, 1, name=block_name + '_conv1', trainable=trainable)
+        branch_1 = conv2d_bn_td(x, 32, 1, name=block_name + '_conv2', trainable=trainable)
+        branch_1 = conv2d_bn_td(branch_1, 32, 3, name=block_name + '_conv3', trainable=trainable)
+        branch_2 = conv2d_bn_td(x, 32, 1, name=block_name + '_conv4', trainable=trainable)
+        branch_2 = conv2d_bn_td(branch_2, 48, 3, name=block_name + '_conv5', trainable=trainable)
+        branch_2 = conv2d_bn_td(branch_2, 64, 3, name=block_name + '_conv6', trainable=trainable)
         branches = [branch_0, branch_1, branch_2]
     elif block_type == 'block17':
-        branch_0 = conv2d_bn_td(x, 192, 1, name=block_name + '_conv1')
-        branch_1 = conv2d_bn_td(x, 128, 1, name=block_name + '_conv2')
-        branch_1 = conv2d_bn_td(branch_1, 160, [1, 7], name=block_name + '_conv3')
-        branch_1 = conv2d_bn_td(branch_1, 192, [7, 1], name=block_name + '_conv4')
+        branch_0 = conv2d_bn_td(x, 192, 1, name=block_name + '_conv1', trainable=trainable)
+        branch_1 = conv2d_bn_td(x, 128, 1, name=block_name + '_conv2', trainable=trainable)
+        branch_1 = conv2d_bn_td(branch_1, 160, [1, 7], name=block_name + '_conv3', trainable=trainable)
+        branch_1 = conv2d_bn_td(branch_1, 192, [7, 1], name=block_name + '_conv4', trainable=trainable)
         branches = [branch_0, branch_1]
     elif block_type == 'block8':
-        branch_0 = conv2d_bn_td(x, 192, 1, name=block_name + '_conv1')
-        branch_1 = conv2d_bn_td(x, 192, 1, name=block_name + '_conv2')
-        branch_1 = conv2d_bn_td(branch_1, 224, [1, 3], name=block_name + '_conv3')
-        branch_1 = conv2d_bn_td(branch_1, 256, [3, 1], name=block_name + '_conv4')
+        branch_0 = conv2d_bn_td(x, 192, 1, name=block_name + '_conv1', trainable=trainable)
+        branch_1 = conv2d_bn_td(x, 192, 1, name=block_name + '_conv2', trainable=trainable)
+        branch_1 = conv2d_bn_td(branch_1, 224, [1, 3], name=block_name + '_conv3', trainable=trainable)
+        branch_1 = conv2d_bn_td(branch_1, 256, [3, 1], name=block_name + '_conv4', trainable=trainable)
         branches = [branch_0, branch_1]
     else:
         raise ValueError('Unknown Inception-ResNet block type. '
@@ -267,7 +272,8 @@ def inception_resnet_block_td(x, scale, block_type, block_idx, activation='relu'
                       1,
                       activation=None,
                       use_bias=True,
-                      name=block_name + '_conv')
+                      name=block_name + '_conv',
+                      trainable=trainable)
 
     x = Lambda(lambda inputs, scale: inputs[0] + inputs[1] * scale,
                output_shape=K.int_shape(x)[1:],
@@ -300,23 +306,23 @@ def nn_base(input_tensor=None, trainable=False):
         bn_axis = 1
 
     # Stem block: 35 x 35 x 192
-    x = conv2d_bn(img_input, 32, 3, strides=2, padding='valid', name='Stem_block' + '_conv1')
-    x = conv2d_bn(x, 32, 3, padding='valid', name='Stem_block' + '_conv2')
-    x = conv2d_bn(x, 64, 3, name='Stem_block' + '_conv3')
+    x = conv2d_bn(img_input, 32, 3, strides=2, padding='valid', name='Stem_block' + '_conv1', trainable=trainable)
+    x = conv2d_bn(x, 32, 3, padding='valid', name='Stem_block' + '_conv2', trainable=trainable)
+    x = conv2d_bn(x, 64, 3, name='Stem_block' + '_conv3', trainable=trainable)
     x = MaxPooling2D(3, strides=2)(x)
-    x = conv2d_bn(x, 80, 1, padding='valid', name='Stem_block' + '_conv4')
-    x = conv2d_bn(x, 192, 3, padding='valid', name='Stem_block' + '_conv5')
+    x = conv2d_bn(x, 80, 1, padding='valid', name='Stem_block' + '_conv4', trainable=trainable)
+    x = conv2d_bn(x, 192, 3, padding='valid', name='Stem_block' + '_conv5', trainable=trainable)
     x = MaxPooling2D(3, strides=2)(x)
 
     # Mixed 5b (Inception-A block): 35 x 35 x 320
-    branch_0 = conv2d_bn(x, 96, 1, name='Inception_A_block' + '_conv1')
-    branch_1 = conv2d_bn(x, 48, 1, name='Inception_A_block' + '_conv2')
-    branch_1 = conv2d_bn(branch_1, 64, 5, name='Inception_A_block' + '_conv3')
-    branch_2 = conv2d_bn(x, 64, 1, name='Inception_A_block' + '_conv4')
-    branch_2 = conv2d_bn(branch_2, 96, 3, name='Inception_A_block' + '_conv5')
-    branch_2 = conv2d_bn(branch_2, 96, 3, name='Inception_A_block' + '_conv6')
+    branch_0 = conv2d_bn(x, 96, 1, name='Inception_A_block' + '_conv1', trainable=trainable)
+    branch_1 = conv2d_bn(x, 48, 1, name='Inception_A_block' + '_conv2', trainable=trainable)
+    branch_1 = conv2d_bn(branch_1, 64, 5, name='Inception_A_block' + '_conv3', trainable=trainable)
+    branch_2 = conv2d_bn(x, 64, 1, name='Inception_A_block' + '_conv4', trainable=trainable)
+    branch_2 = conv2d_bn(branch_2, 96, 3, name='Inception_A_block' + '_conv5', trainable=trainable)
+    branch_2 = conv2d_bn(branch_2, 96, 3, name='Inception_A_block' + '_conv6', trainable=trainable)
     branch_pool = AveragePooling2D(3, strides=1, padding='same')(x)
-    branch_pool = conv2d_bn(branch_pool, 64, 1, name='Inception_A_block' + '_conv7')
+    branch_pool = conv2d_bn(branch_pool, 64, 1, name='Inception_A_block' + '_conv7', trainable=trainable)
     branches = [branch_0, branch_1, branch_2, branch_pool]
     channel_axis = 1 if K.image_data_format() == 'channels_first' else 3
     x = Concatenate(axis=channel_axis, name='mixed_5b')(branches)
@@ -326,13 +332,14 @@ def nn_base(input_tensor=None, trainable=False):
         x = inception_resnet_block(x,
                                    scale=0.17,
                                    block_type='block35',
-                                   block_idx=block_idx)
+                                   block_idx=block_idx,
+                                   trainable=trainable)
 
     # Mixed 6a (Reduction-A block): 17 x 17 x 1088
-    branch_0 = conv2d_bn(x, 384, 3, strides=2, padding='valid', name='Reduction_A_block' + '_conv1')
-    branch_1 = conv2d_bn(x, 256, 1, name='Reduction_A_block' + '_conv2')
-    branch_1 = conv2d_bn(branch_1, 256, 3, name='Reduction_A_block' + '_conv3')
-    branch_1 = conv2d_bn(branch_1, 384, 3, strides=2, padding='valid', name='Reduction_A_block' + '_conv4')
+    branch_0 = conv2d_bn(x, 384, 3, strides=2, padding='valid', name='Reduction_A_block' + '_conv1', trainable=trainable)
+    branch_1 = conv2d_bn(x, 256, 1, name='Reduction_A_block' + '_conv2', trainable=trainable)
+    branch_1 = conv2d_bn(branch_1, 256, 3, name='Reduction_A_block' + '_conv3', trainable=trainable)
+    branch_1 = conv2d_bn(branch_1, 384, 3, strides=2, padding='valid', name='Reduction_A_block' + '_conv4', trainable=trainable)
     branch_pool = MaxPooling2D(3, strides=2, padding='valid')(x)
     branches = [branch_0, branch_1, branch_pool]
     x = Concatenate(axis=channel_axis, name='mixed_6a')(branches)
@@ -342,7 +349,8 @@ def nn_base(input_tensor=None, trainable=False):
         x = inception_resnet_block(x,
                                    scale=0.1,
                                    block_type='block17',
-                                   block_idx=block_idx)
+                                   block_idx=block_idx,
+                                   trainable=trainable)
 
     return x
 
@@ -355,13 +363,13 @@ def classifier_layers(x, input_shape, trainable=False):
     channel_axis = 1 if K.image_data_format() == 'channels_first' else 4
 
     # Mixed 7a (Reduction-B block): 8 x 8 x 2080
-    branch_0 = conv2d_bn_td(x, 256, 1, name='Reduction_B_block' + '_conv1')
-    branch_0 = conv2d_bn_td(branch_0, 384, 3, strides=2, padding='valid', name='Reduction_B_block' + '_conv2')
-    branch_1 = conv2d_bn_td(x, 256, 1, name='Reduction_B_block' + '_conv3')
-    branch_1 = conv2d_bn_td(branch_1, 288, 3, strides=2, padding='valid', name='Reduction_B_block' + '_conv4')
-    branch_2 = conv2d_bn_td(x, 256, 1, name='Reduction_B_block' + '_conv5')
-    branch_2 = conv2d_bn_td(branch_2, 288, 3, name='Reduction_B_block' + '_conv6')
-    branch_2 = conv2d_bn_td(branch_2, 320, 3, strides=2, padding='valid', name='Reduction_B_block' + '_conv7')
+    branch_0 = conv2d_bn_td(x, 256, 1, name='Reduction_B_block' + '_conv1', trainable=trainable)
+    branch_0 = conv2d_bn_td(branch_0, 384, 3, strides=2, padding='valid', name='Reduction_B_block' + '_conv2', trainable=trainable)
+    branch_1 = conv2d_bn_td(x, 256, 1, name='Reduction_B_block' + '_conv3', trainable=trainable)
+    branch_1 = conv2d_bn_td(branch_1, 288, 3, strides=2, padding='valid', name='Reduction_B_block' + '_conv4', trainable=trainable)
+    branch_2 = conv2d_bn_td(x, 256, 1, name='Reduction_B_block' + '_conv5', trainable=trainable)
+    branch_2 = conv2d_bn_td(branch_2, 288, 3, name='Reduction_B_block' + '_conv6', trainable=trainable)
+    branch_2 = conv2d_bn_td(branch_2, 320, 3, strides=2, padding='valid', name='Reduction_B_block' + '_conv7', trainable=trainable)
     branch_pool = TimeDistributed(MaxPooling2D(3, strides=2, padding='valid'))(x)
     branches = [branch_0, branch_1, branch_2, branch_pool]
     x = Concatenate(axis=channel_axis, name='mixed_7a')(branches)
@@ -371,15 +379,17 @@ def classifier_layers(x, input_shape, trainable=False):
         x = inception_resnet_block_td(x,
                                       scale=0.2,
                                       block_type='block8',
-                                      block_idx=block_idx)
+                                      block_idx=block_idx,
+                                      trainable=trainable)
     x = inception_resnet_block_td(x,
                                   scale=1.,
                                   activation=None,
                                   block_type='block8',
-                                  block_idx=10)
+                                  block_idx=10,
+                                  trainable=trainable)
 
     # Final convolution block: 8 x 8 x 1536
-    x = conv2d_bn_td(x, 1536, 1, name='conv_7b')
+    x = conv2d_bn_td(x, 1536, 1, name='conv_7b', trainable=trainable)
 
     TimeDistributed(GlobalAveragePooling2D(), name='avg_pool')(x)
 
@@ -388,10 +398,10 @@ def classifier_layers(x, input_shape, trainable=False):
 
 def rpn(base_layers, num_anchors, trainable=True):
 
-    x = Conv2D(512, (3, 3), padding='same', activation='relu', kernel_initializer='normal', name='rpn_conv1')(base_layers)
+    x = Conv2D(512, (3, 3), padding='same', activation='relu', kernel_initializer='normal', name='rpn_conv1', trainable=trainable)(base_layers)
 
-    x_class = Conv2D(num_anchors, (1, 1), activation='sigmoid', kernel_initializer='uniform', name='rpn_out_class')(x)
-    x_regr = Conv2D(num_anchors * 4, (1, 1), activation='linear', kernel_initializer='zero', name='rpn_out_regress')(x)
+    x_class = Conv2D(num_anchors, (1, 1), activation='sigmoid', kernel_initializer='uniform', name='rpn_out_class', trainable=trainable)(x)
+    x_regr = Conv2D(num_anchors * 4, (1, 1), activation='linear', kernel_initializer='zero', name='rpn_out_regress', trainable=trainable)(x)
 
     return [x_class, x_regr, base_layers]
 
@@ -413,7 +423,7 @@ def classifier(base_layers, input_rois, num_rois, nb_classes=21, trainable=True)
 
     out = TimeDistributed(Flatten())(out)
 
-    out_class = TimeDistributed(Dense(nb_classes, activation='softmax', kernel_initializer='zero'), name='dense_class_{}'.format(nb_classes))(out)
+    out_class = TimeDistributed(Dense(nb_classes, activation='softmax', kernel_initializer='zero'), name='dense_class_{}'.format(nb_classes), trainable=trainable)(out)
     # note: no regression target for bg class
-    out_regr = TimeDistributed(Dense(4 * (nb_classes-1), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(nb_classes))(out)
+    out_regr = TimeDistributed(Dense(4 * (nb_classes-1), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(nb_classes), trainable=trainable)(out)
     return [out_class, out_regr]
