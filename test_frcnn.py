@@ -47,6 +47,11 @@ if C.network == 'resnet50':
 	import keras_frcnn.resnet as nn
 elif C.network == 'vgg':
 	import keras_frcnn.vgg as nn
+elif C.network == 'inception_resnet':
+	import keras_frcnn.inception_resnet_v2 as nn
+else:
+	print('Not a valid model')
+	raise ValueError
 
 # turn off any data augmentation at test time
 C.use_horizontal_flips = False
@@ -113,6 +118,8 @@ if C.network == 'resnet50':
 	num_features = 1024
 elif C.network == 'vgg':
 	num_features = 512
+elif C.network == 'inception_resnet':
+  num_features = 1088
 
 if K.common.image_dim_ordering() == 'th':
 	input_shape_img = (3, None, None)
