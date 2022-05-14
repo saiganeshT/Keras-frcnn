@@ -69,7 +69,8 @@ def conv2d_bn(x,
         bn_name = None if name is None else name + '_bn'
         x = BatchNormalization(axis=bn_axis,
                                scale=False,
-                               name=bn_name)(x)
+                               name=bn_name,
+                               trainable=trainable)(x)
     if activation is not None:
         ac_name = None if name is None else name + '_ac'
         x = Activation(activation, name=ac_name)(x)
@@ -111,7 +112,8 @@ def conv2d_bn_td(x,
         bn_name = None if name is None else name + '_bn'
         x = TimeDistributed(BatchNormalization(axis=bn_axis,
                                                scale=False),
-                            name=bn_name)(x)
+                                               name=bn_name,
+                                               trainable=trainable)(x)
     if activation is not None:
         ac_name = None if name is None else name + '_ac'
         x = Activation(activation, name=ac_name)(x)
