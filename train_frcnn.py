@@ -179,6 +179,7 @@ rpn_accuracy_rpn_monitor = []
 rpn_accuracy_for_epoch = []
 start_time = time.time()
 
+early_stop = 0
 best_loss = np.Inf
 val_best_loss = np.Inf
 
@@ -309,11 +310,11 @@ for epoch_num in range(num_epochs):
 			
 			break
 			
-  # validation steps
+  # validation step
 	if iter_num==epoch_length:
 		iter_num = 0
 		progbar = generic_utils.Progbar(val_epoch_length)
-		print('Validation')
+		print('Validation step')
 
 		while True:
 
@@ -404,12 +405,21 @@ for epoch_num in range(num_epochs):
 				iter_num = 0
 				start_time = time.time()
 
-				if val_curr_loss < val_best_loss:
-					if C.verbose:
-						print(f'Validation total loss decreased from {val_best_loss} to {val_curr_loss}, saving weights')
+        # early stopping implementation
+				if val_curr_loss - val_best_loss >= 0:
+					print(f'Validation total loss did not decrease')
+					early_stop += 1
+				else:
+					print(f'Validation total loss decreased')
 					val_best_loss = val_curr_loss
-				model_all.save_weights(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
-				wandb.save(model_path_regex.group(1) + "_" + '{:04d}'.format(epoch_num) + model_path_regex.group(2))
+					early_stop = 0
+
+				model_all.save_weights(model_path_regex.group(1) + "_" + model_path_regex.group(2))
+				wandb.save(model_path_regex.group(1) + "_" + model_path_regex.group(2))
 				break
+
+	if early_stop == C.patience:
+		print(f'Early stopping!')
+		break
 
 print('Training complete, exiting.')
