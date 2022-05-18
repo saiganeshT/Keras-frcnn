@@ -168,7 +168,7 @@ model_rpn.compile(optimizer=optimizer, loss=[losses.rpn_loss_cls(num_anchors), l
 model_classifier.compile(optimizer=optimizer_classifier, loss=[losses.class_loss_cls, losses.class_loss_regr(len(classes_count)-1)], metrics={f'dense_class_{len(classes_count)}': 'accuracy'})
 model_all.compile(optimizer='sgd', loss='mae')
 
-epoch_length = len(train_imgs)
+epoch_length = C.epoch_length
 val_epoch_length = len(val_imgs)
 num_epochs = int(options.num_epochs)
 iter_num = 0
@@ -370,8 +370,8 @@ for epoch_num in range(num_epochs):
 			val_losses[iter_num, 3] = val_loss_class[2]
 			val_losses[iter_num, 4] = val_loss_class[3]
 
-			progbar.update(iter_num+1, [('rpn_cls', val_losses[iter_num, 0]), ('rpn_regr', val_losses[iter_num, 1]),
-									  ('detector_cls', val_losses[iter_num, 2]), ('detector_regr', val_losses[iter_num, 3])])
+			progbar.update(iter_num+1, [('val_rpn_cls', val_losses[iter_num, 0]), ('val_rpn_regr', val_losses[iter_num, 1]),
+									  ('val_detector_cls', val_losses[iter_num, 2]), ('val_detector_regr', val_losses[iter_num, 3])])
 
 			iter_num += 1
 
