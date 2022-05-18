@@ -9,6 +9,9 @@ class Config:
 
 		self.network = 'resnet50'
 
+		# early stopping patience
+		self.patience = 4
+
 		# setting for data augmentation
 		self.use_horizontal_flips = True
 		self.use_vertical_flips = True
