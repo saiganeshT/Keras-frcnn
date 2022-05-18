@@ -9,8 +9,11 @@ class Config:
 
 		self.network = 'resnet50'
 
+		# epoch length
+		self.epoch_length = 600
+
 		# early stopping patience
-		self.patience = 4
+		self.patience = 6
 
 		# setting for data augmentation
 		self.use_horizontal_flips = True
