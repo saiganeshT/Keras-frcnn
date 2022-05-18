@@ -259,6 +259,6 @@ for idx, img_name in enumerate(sorted(os.listdir(img_path))):
 	print(all_dets)
 
 	
-	cv2.imwrite('/content/drive/MyDrive/dataset/results/{}.png'.format(os.path.splitext(str(img_name))[0]),img)
+	cv2.imwrite('/content/dataset/results/{}.png'.format(os.path.splitext(str(img_name))[0]),img)
 
 
