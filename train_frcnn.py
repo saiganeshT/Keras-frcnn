@@ -405,13 +405,17 @@ for epoch_num in range(num_epochs):
 				iter_num = 0
 				start_time = time.time()
 
-        # early stopping implementation
+				# early stopping implementation
+				# the algorithm saves the last weights update and the
+				# best weights in terms of total validation loss
 				if val_curr_loss - val_best_loss >= 0:
 					print(f'Validation total loss did not decrease')
 					early_stop += 1
 				else:
 					print(f'Validation total loss decreased')
 					val_best_loss = val_curr_loss
+          				model_all.save_weights(model_path_regex.group(1) + "_" + model_path_regex.group(2) + "_best")
+					wandb.save(model_path_regex.group(1) + "_" + model_path_regex.group(2) + "_best")
 					early_stop = 0
 
 				model_all.save_weights(model_path_regex.group(1) + "_" + model_path_regex.group(2))
