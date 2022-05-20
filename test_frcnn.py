@@ -147,9 +147,9 @@ model_classifier_only = Model([feature_map_input, roi_input], classifier)
 
 model_classifier = Model([feature_map_input, roi_input], classifier)
 
-print(f'Loading weights from {C.model_path}')
-model_rpn.load_weights(C.model_path, by_name=True)
-model_classifier.load_weights(C.model_path, by_name=True)
+print(f'Loading weights from model_frcnn_best.hdf5')
+model_rpn.load_weights("model_frcnn_best.hdf5", by_name=True)
+model_classifier.load_weights("model_frcnn_best.hdf5", by_name=True)
 
 model_rpn.compile(optimizer='sgd', loss='mse')
 model_classifier.compile(optimizer='sgd', loss='mse')
