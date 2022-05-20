@@ -19,7 +19,7 @@ from keras.utils import generic_utils
 
 # data logger
 import wandb
-wandb.init(project="FasterRCNN", entity="team_ergo",name='buoy_detection_rot400_fixed')
+wandb.init(project="FasterRCNN", entity="team_ergo",name='rami_E750PA8_400')
 
 sys.setrecursionlimit(40000)
 
@@ -414,7 +414,7 @@ for epoch_num in range(num_epochs):
 				else:
 					print(f'Validation total loss decreased')
 					val_best_loss = val_curr_loss
-          				model_all.save_weights(model_path_regex.group(1) + "_" + model_path_regex.group(2) + "_best")
+					model_all.save_weights(model_path_regex.group(1) + "_" + model_path_regex.group(2) + "_best")
 					wandb.save(model_path_regex.group(1) + "_" + model_path_regex.group(2) + "_best")
 					early_stop = 0
 
