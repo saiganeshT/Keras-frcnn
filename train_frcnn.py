@@ -109,7 +109,7 @@ with open(config_output_filename, 'wb') as config_f:
 	pickle.dump(C,config_f)
 	print(f'Config has been written to {config_output_filename}, and can be loaded when testing to ensure correct results')
 
-wandb.save('config.pickle')
+wandb.save('config.pickle', policy="now")
 random.shuffle(imgs)
 
 # extract the validation set as 30% of the training set
@@ -415,11 +415,11 @@ for epoch_num in range(num_epochs):
 					print(f'Validation total loss decreased')
 					val_best_loss = val_curr_loss
 					model_all.save_weights(model_path_regex.group(1) + "_best_" + model_path_regex.group(2))
-					wandb.save(model_path_regex.group(1) + "_best_" + model_path_regex.group(2))
+					wandb.save(model_path_regex.group(1) + "_best_" + model_path_regex.group(2), policy="now")
 					early_stop = 0
 
 				model_all.save_weights(model_path_regex.group(1) + "_" + model_path_regex.group(2))
-				wandb.save(model_path_regex.group(1) + "_" + model_path_regex.group(2))
+				wandb.save(model_path_regex.group(1) + "_" + model_path_regex.group(2), policy="now")
 				break
 
 	if early_stop == C.patience:
