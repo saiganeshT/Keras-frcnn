@@ -414,8 +414,8 @@ for epoch_num in range(num_epochs):
 				else:
 					print(f'Validation total loss decreased')
 					val_best_loss = val_curr_loss
-					model_all.save_weights(model_path_regex.group(1) + "_best_" + model_path_regex.group(2))
-					wandb.save(model_path_regex.group(1) + "_best_" + model_path_regex.group(2), policy="now")
+					model_all.save_weights(model_path_regex.group(1) + "_best" + model_path_regex.group(2))
+					wandb.save(model_path_regex.group(1) + "_best" + model_path_regex.group(2), policy="now")
 					early_stop = 0
 
 				model_all.save_weights(model_path_regex.group(1) + "_" + model_path_regex.group(2))
