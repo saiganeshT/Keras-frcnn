@@ -17,7 +17,7 @@ def augment(img_data, config, augment=True):
 		rows, cols = img.shape[:2]
 
 		if config.use_zoom_in:
-			scale = np.random.choice([1,1.1,1.2],1)[0]
+			scale = np.random.choice([1,1.1,1.2,1.3],1)[0]
 			img = cv2.resize(img,None,fx=scale,fy=scale)
 			img = img[:rows,:cols]
 			for bbox in img_data_aug['bboxes']:
