@@ -16,6 +16,7 @@ class Config:
 		self.patience = 6
 
 		# setting for data augmentation
+		self.use_zoom_in = True
 		self.use_horizontal_flips = True
 		self.use_vertical_flips = True
 		self.rot_90 = True
