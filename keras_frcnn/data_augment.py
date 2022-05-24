@@ -16,8 +16,8 @@ def augment(img_data, config, augment=True):
 	if augment:
 		rows, cols = img.shape[:2]
 
-		if config.use_zoom_in and np.random.randint(0, 2) == 0:
-			scale = np.random.choice([1.1,1.2,1.3],1)[0]
+		if config.use_zoom_in:
+			scale = np.random.choice([1,1.1,1.2],1)[0]
 			img = cv2.resize(img,None,fx=scale,fy=scale)
 			img = img[:rows,:cols]
 			for bbox in img_data_aug['bboxes']:
@@ -25,7 +25,7 @@ def augment(img_data, config, augment=True):
 				bbox['x2'] = int(min(cols-1,bbox['x2']*scale))
 				bbox['y1'] = int(min(rows-1,bbox['y1']*scale))
 				bbox['y2'] = int(min(rows-1,bbox['y2']*scale))
-		
+
 		if config.use_horizontal_flips and np.random.randint(0, 2) == 0:
 			img = cv2.flip(img, 1)
 			for bbox in img_data_aug['bboxes']:
