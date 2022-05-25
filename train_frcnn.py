@@ -7,6 +7,8 @@ import numpy as np
 from optparse import OptionParser
 import pickle
 import re
+import cv2
+import os
 
 from keras import backend as K
 from keras.optimizers import Adam, SGD, RMSprop
@@ -187,6 +189,11 @@ class_mapping_inv = {v: k for k, v in class_mapping.items()}
 print('Starting training')
 
 vis = True
+
+#saves all the validation images inside the "test" directory
+for val_sample in val_imgs:
+	image_to_save = cv2.imread(val_sample['filepath'])
+	cv2.imwrite('/content/dataset/results/{}.png'.format(os.path.basename(val_sample['filepath'])),image_to_save)
 
 for epoch_num in range(num_epochs):
 
