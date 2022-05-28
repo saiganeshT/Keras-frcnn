@@ -243,10 +243,16 @@ for idx, img_name in enumerate(sorted(os.listdir(img_path))):
 
 			(real_x1, real_y1, real_x2, real_y2) = get_real_coordinates(ratio, x1, y1, x2, y2)
 
-			cv2.rectangle(img,(real_x1, real_y1), (real_x2, real_y2), (int(class_to_color[key][0]), int(class_to_color[key][1]), int(class_to_color[key][2])),2)
-
 			textLabel = f'{key}: {int(100*new_probs[jk])}'
 			all_dets.append((key,100*new_probs[jk]))
+
+			if key == '2':
+				img_patch = img[real_y1:real_y2,real_x1:real_x2,:]
+				num_found = True
+			else:
+				num_found = False
+
+			cv2.rectangle(img,(real_x1, real_y1), (real_x2, real_y2), (int(class_to_color[key][0]), int(class_to_color[key][1]), int(class_to_color[key][2])),2)
 
 			(retval,baseLine) = cv2.getTextSize(textLabel,cv2.FONT_HERSHEY_COMPLEX,1,1)
 			textOrg = (real_x1, real_y1-0)
@@ -258,7 +264,9 @@ for idx, img_name in enumerate(sorted(os.listdir(img_path))):
 	print(f'Elapsed time = {time.time() - st}')
 	print(all_dets)
 
-	
+	if num_found == True:
+		cv2.imwrite('/content/dataset/results/{}_patch.png'.format(os.path.splitext(str(img_name))[0]),img_patch)
+
 	cv2.imwrite('/content/dataset/results/{}.png'.format(os.path.splitext(str(img_name))[0]),img)
 
 
