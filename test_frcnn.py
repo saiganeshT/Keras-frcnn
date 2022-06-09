@@ -247,19 +247,19 @@ for idx, img_name in enumerate(sorted(os.listdir(img_path))):
 			all_dets.append((key,100*new_probs[jk]))
 
 			if key == '2':
-				img_patch = img[real_y1:real_y2,real_x1:real_x2,:]
+				img_patch = img[real_y1-15:real_y2+15,real_x1-15:real_x2+15,:]
 				num_found = True
 			else:
 				num_found = False
 
-			cv2.rectangle(img,(real_x1, real_y1), (real_x2, real_y2), (int(class_to_color[key][0]), int(class_to_color[key][1]), int(class_to_color[key][2])),2)
+			# cv2.rectangle(img,(real_x1, real_y1), (real_x2, real_y2), (int(class_to_color[key][0]), int(class_to_color[key][1]), int(class_to_color[key][2])),2)
 
-			(retval,baseLine) = cv2.getTextSize(textLabel,cv2.FONT_HERSHEY_COMPLEX,1,1)
-			textOrg = (real_x1, real_y1-0)
+			# (retval,baseLine) = cv2.getTextSize(textLabel,cv2.FONT_HERSHEY_COMPLEX,1,1)
+			# textOrg = (real_x1, real_y1-0)
 
-			cv2.rectangle(img, (textOrg[0] - 5, textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (0, 0, 0), 2)
-			cv2.rectangle(img, (textOrg[0] - 5,textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (255, 255, 255), -1)
-			cv2.putText(img, textLabel, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1)
+			# cv2.rectangle(img, (textOrg[0] - 5, textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (0, 0, 0), 2)
+			# cv2.rectangle(img, (textOrg[0] - 5,textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (255, 255, 255), -1)
+			# cv2.putText(img, textLabel, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1)
 
 	print(f'Elapsed time = {time.time() - st}')
 	print(all_dets)
@@ -267,6 +267,6 @@ for idx, img_name in enumerate(sorted(os.listdir(img_path))):
 	if num_found == True:
 		cv2.imwrite('/content/dataset/results/{}_patch.png'.format(os.path.splitext(str(img_name))[0]),img_patch)
 
-	cv2.imwrite('/content/dataset/results/{}.png'.format(os.path.splitext(str(img_name))[0]),img)
+	# cv2.imwrite('/content/dataset/results/{}.png'.format(os.path.splitext(str(img_name))[0]),img)
 
 
