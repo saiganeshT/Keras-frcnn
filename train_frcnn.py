@@ -21,7 +21,7 @@ from keras.utils import generic_utils
 
 # data logger
 import wandb
-wandb.init(project="FasterRCNN", entity="team_ergo",name='rami_E750PA8_400')
+wandb.init(project="FasterRCNN", entity="saiganesh")
 
 sys.setrecursionlimit(40000)
 
